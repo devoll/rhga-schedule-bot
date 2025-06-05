@@ -8,6 +8,7 @@ import { GoogleSheetsController } from './google-sheets/google-sheets.controller
 import configuration from './config/configuration';
 import { ScheduleModule } from './schedule/schedule.module';
 import { SyncModule } from './sync/sync.module';
+import { TelegramModule } from './telegram/telegram.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { SyncModule } from './sync/sync.module';
     GoogleSheetsModule,
     ScheduleModule,
     SyncModule,
+    TelegramModule,
   ],
   controllers: [AppController, GoogleSheetsController],
   providers: [AppService],

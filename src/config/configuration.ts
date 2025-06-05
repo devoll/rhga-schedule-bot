@@ -7,4 +7,7 @@ export default () => ({
   database: {
     uri: process.env.MONGODB_URI,
   },
+  telegram: {
+    botToken: process.env.TELEGRAM_BOT_TOKEN,
+  },
 });

@@ -86,4 +86,85 @@ export class ScheduleService {
       .sort({ date: 1, time: 1 })
       .exec();
   }
+
+  private formatDate(date: Date): string {
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // Месяцы в JS начинаются с 0
+    const year = date.getUTCFullYear();
+    return `${day}.${month}.${year}`;
+  }
+
+  async getNextDayScheduleFormatted(): Promise<string> {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0); // Устанавливаем начало текущего дня в UTC
+
+    this.logger.debug(`Ищем расписание начиная с даты: ${today.toISOString()}`);
+
+    // 1. Найти самую раннюю дату, на которую есть расписание (сегодня или позже)
+    const nextScheduleDayEntry = await this.scheduleModel
+      .findOne({ date: { $gte: today } })
+      .sort({ date: 'asc' })
+      .select('date')
+      .lean()
+      .exec();
+
+    if (!nextScheduleDayEntry) {
+      this.logger.log('Расписание на ближайшие дни не найдено.');
+      return 'Расписание на ближайшие дни не найдено.';
+    }
+
+    const targetDate = nextScheduleDayEntry.date;
+    this.logger.debug(
+      `Найдена ближайшая дата с расписанием: ${targetDate.toISOString()}`,
+    );
+
+    // 2. Получить все записи расписания для этой даты
+    const schedulesForDate: Schedule[] = await this.scheduleModel
+      .find({ date: targetDate })
+      .sort({ group: 'asc', time: 'asc' })
+      .lean()
+      .exec();
+
+    if (!schedulesForDate || schedulesForDate.length === 0) {
+      this.logger.warn(
+        `Не найдено записей для даты ${this.formatDate(targetDate)}, хотя дата была найдена.`,
+      );
+      return `Расписание на ${this.formatDate(targetDate)} не найдено (нет записей).`;
+    }
+
+    this.logger.log(
+      `Найдено ${schedulesForDate.length} записей на ${this.formatDate(targetDate)}`,
+    );
+
+    // 3. Форматировать расписание
+    let response = `Расписание на ${this.formatDate(targetDate)}:\n\n`;
+    const schedulesByGroup = schedulesForDate.reduce(
+      (acc, schedule) => {
+        if (!acc[schedule.group]) {
+          acc[schedule.group] = [];
+        }
+        acc[schedule.group].push(schedule);
+        return acc;
+      },
+      {} as Record<string, Schedule[]>,
+    );
+
+    for (const groupName in schedulesByGroup) {
+      response += `Группа: ${groupName}\n`;
+      schedulesByGroup[groupName].forEach((item) => {
+        response += [
+          `🕙 ${item.time}`,
+          `📖 ${item.subject}`,
+          `🏷️ ${item.lessonType}`,
+          `👨‍🏫 ${item.teacherName}`,
+          `📚 ${item.lessonFormat}`,
+          `📌 ${item.location}`,
+          '---------------------',
+          '',
+        ].join('\n');
+      });
+      response += '\n';
+    }
+    return response.trim();
+  }
 }
