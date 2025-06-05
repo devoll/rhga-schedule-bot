@@ -11,6 +11,14 @@ export interface SheetData {
 export class GoogleSheetsService {
   private readonly baseUrl = 'https://docs.google.com/spreadsheets/d';
 
+  private getColumnIndex(columnId: string): number {
+    let index = 0;
+    for (let i = 0; i < columnId.length; i++) {
+      index = index * 26 + (columnId.charCodeAt(i) - 'A'.charCodeAt(0) + 1);
+    }
+    return index - 1; // 0-indexed
+  }
+
   /**
    * Получает данные из указанного листа публичной Google таблицы
    * @param spreadsheetId ID Google таблицы
@@ -78,24 +86,98 @@ export class GoogleSheetsService {
       const cols = table.cols || [];
       const rawRows = table.rows || [];
 
-      // Извлекаем заголовки (эта логика остается прежней, она корректно формирует список ожидаемых заголовков)
+      // Извлекаем заголовки
       const headers = cols
-        .filter((col: any) => col && col.label && col.label.trim() !== '')
-        .map((col: any) => col.label.trim());
+        .filter(
+          (colDef: any) =>
+            colDef && colDef.label && colDef.label.trim() !== '' && colDef.id,
+        )
+        .map((colDef: any) => colDef.label.trim());
 
       // Извлекаем строки
       const rows = rawRows.map((row: any) => {
         const rowData: Record<string, any> = {};
         if (row && row.c) {
           // Убедимся, что есть массив ячеек 'c'
-          row.c.forEach((cell: any, cellIndex: number) => {
-            const colDef = cols[cellIndex]; // Получаем определение столбца для текущей ячейки
-            // Используем заголовок из определения столбца, если он валидный
-            if (colDef && colDef.label && colDef.label.trim() !== '') {
+          cols.forEach((colDef: any, index: number) => {
+            if (
+              colDef &&
+              colDef.label &&
+              colDef.label.trim() !== '' &&
+              colDef.id
+            ) {
               const headerName = colDef.label.trim();
-              // Предпочитаем отформатированное значение (cell.f), затем сырое значение (cell.v)
-              // Если cell равен null (пустая ячейка), присваиваем пустую строку
-              rowData[headerName] = cell ? cell.f || cell.v : '';
+              const sheetColumnIndex = this.getColumnIndex(colDef.id);
+
+              if (sheetColumnIndex >= 0 && sheetColumnIndex < row.c.length) {
+                const cell = row.c[sheetColumnIndex];
+                let valueToStore: any = cell
+                  ? cell.f !== undefined && cell.f !== null
+                    ? cell.f
+                    : cell.v
+                  : '';
+
+                // Парсинг даты, если заголовок 'Дата'
+                if (
+                  headerName === 'Дата' &&
+                  typeof valueToStore === 'string' &&
+                  valueToStore.trim() !== ''
+                ) {
+                  const dateString = valueToStore.trim();
+                  // Ожидаемый формат: DD.MM.YY или DD.MM.YY.ДеньНедели
+                  const parts = dateString.split('.');
+
+                  if (parts.length >= 3) {
+                    const day = parseInt(parts[0], 10);
+                    const month = parseInt(parts[1], 10); // Месяц из таблицы (1-12)
+                    const yearShort = parseInt(parts[2], 10);
+
+                    if (
+                      !isNaN(day) &&
+                      !isNaN(month) &&
+                      !isNaN(yearShort) &&
+                      yearShort >= 0 &&
+                      yearShort <= 99
+                    ) {
+                      const year = 2000 + yearShort; // Предполагаем 21 век
+                      // Проверка на корректность дня и месяца
+                      if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+                        try {
+                          // Создаем дату в UTC, чтобы избежать проблем с часовыми поясами при парсинге
+                          const parsedDate = new Date(
+                            Date.UTC(year, month - 1, day),
+                          ); // month в JS 0-индексированный
+
+                          // Дополнительная валидация, что дата не "перескочила" (например, 30 февраля)
+                          if (
+                            parsedDate.getUTCFullYear() === year &&
+                            parsedDate.getUTCMonth() === month - 1 &&
+                            parsedDate.getUTCDate() === day
+                          ) {
+                            valueToStore = parsedDate.toISOString(); // Преобразуем в ISO строку (напр. '2024-11-07T00:00:00.000Z')
+                          } else {
+                            // Дата была некорректной (например, 30.02.24), оставляем исходную строку
+                            console.warn(
+                              `Invalid date components for string "${dateString}" (header "${headerName}"). Keeping original.`,
+                            );
+                          }
+                        } catch (e) {
+                          console.warn(
+                            `Failed to parse date string "${dateString}" for header "${headerName}": ${e.message}. Keeping original.`,
+                          );
+                          // Ошибка при создании Date, оставляем исходную строку
+                        }
+                      }
+                      // else: день/месяц вне допустимого диапазона, оставляем исходную строку
+                    }
+                    // else: год некорректен, оставляем исходную строку
+                  }
+                  // else: недостаточно частей для даты, оставляем исходную строку
+                }
+                rowData[headerName] = valueToStore;
+              } else {
+                rowData[headerName] = ''; // Если индекс вне диапазона, ставим пустое значение
+              }
             }
           });
         }

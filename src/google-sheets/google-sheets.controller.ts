@@ -11,9 +11,13 @@ export class GoogleSheetsController {
     private readonly googleSheetsService: GoogleSheetsService,
     private readonly configService: ConfigService,
   ) {
-    this.spreadsheetId = this.configService.get<string>('googleSheets.spreadsheetId');
-    this.defaultSheet = this.configService.get<string>('googleSheets.defaultSheet');
-    
+    this.spreadsheetId = this.configService.get<string>(
+      'googleSheets.spreadsheetId',
+    );
+    this.defaultSheet = this.configService.get<string>(
+      'googleSheets.defaultSheet',
+    );
+
     if (!this.spreadsheetId) {
       throw new Error('GOOGLE_SPREADSHEET_ID не задан в конфигурации');
     }
@@ -35,10 +39,10 @@ export class GoogleSheetsController {
   @Get('all-sheets')
   async getAllSheetsData(@Query('sheetNames') sheetNames?: string) {
     try {
-      const sheets = sheetNames 
-        ? sheetNames.split(',').map(s => s.trim())
+      const sheets = sheetNames
+        ? sheetNames.split(',').map((s) => s.trim())
         : [this.defaultSheet];
-      
+
       return await this.googleSheetsService.getAllSheetsData(
         this.spreadsheetId,
         sheets,

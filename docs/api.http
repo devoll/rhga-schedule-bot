@@ -1,0 +1,2 @@
+### Sync sheet to db
+POST http://localhost:3000/sync/sheet-to-db
