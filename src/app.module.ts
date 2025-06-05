@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MongooseModule } from '@nestjs/mongoose';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { GoogleSheetsModule } from './google-sheets/google-sheets.module';
@@ -16,10 +17,14 @@ import { TelegramModule } from './telegram/telegram.module';
       isGlobal: true,
       load: [configuration],
     }),
-    MongooseModule.forRootAsync({
+    TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('database.uri'),
+      useFactory: (configService: ConfigService) => ({
+        type: 'sqlite',
+        database: 'rgha-schedule-bot.sqlite',
+        entities: [join(__dirname, '**', '*.entity{.ts,.js}')],
+        synchronize: true,
+        // autoLoadEntities: true,
       }),
       inject: [ConfigService],
     }),

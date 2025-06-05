@@ -1,15 +1,13 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleService } from './schedule.service';
-import { Schedule, ScheduleSchema } from './schedule.schema'; // Схема находится в src/schedule.schema.ts
+import { Schedule } from './schedule.entity';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      { name: Schedule.name, schema: ScheduleSchema },
-    ]),
+    TypeOrmModule.forFeature([Schedule]),
   ],
   providers: [ScheduleService],
-  exports: [ScheduleService], // Экспортируем сервис, чтобы он был доступен в SyncModule
+  exports: [ScheduleService],
 })
 export class ScheduleModule {}

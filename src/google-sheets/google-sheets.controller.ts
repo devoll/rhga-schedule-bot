@@ -19,7 +19,7 @@ export class GoogleSheetsController {
     );
 
     if (!this.spreadsheetId) {
-      throw new Error('GOOGLE_SPREADSHEET_ID не задан в конфигурации');
+      throw new Error('GOOGLE_SHEETS_SPREADSHEET_ID не задан в конфигурации');
     }
   }
 

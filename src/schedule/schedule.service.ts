@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Schedule, ScheduleDocument } from './schedule.schema';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, In, MoreThanOrEqual } from 'typeorm';
+import { Schedule } from './schedule.entity';
 import { ScheduleItemDto } from './schedule-item.dto';
 
 @Injectable()
@@ -9,7 +9,8 @@ export class ScheduleService {
   private readonly logger = new Logger(ScheduleService.name);
 
   constructor(
-    @InjectModel(Schedule.name) private scheduleModel: Model<ScheduleDocument>,
+    @InjectRepository(Schedule)
+    private scheduleRepository: Repository<Schedule>,
   ) {}
 
   async overwriteSchedules(scheduleItems: ScheduleItemDto[]): Promise<{
@@ -25,11 +26,11 @@ export class ScheduleService {
     const groups = [...new Set(scheduleItems.map((item) => item.group))];
     this.logger.log(`Overwriting schedules for groups: ${groups.join(', ')}`);
 
-    const deleteResult = await this.scheduleModel
-      .deleteMany({ group: { $in: groups } })
-      .exec();
+    const deleteResult = await this.scheduleRepository.delete({
+      group: In(groups),
+    });
     this.logger.log(
-      `Deleted ${deleteResult.deletedCount} old schedule entries for groups: ${groups.join(', ')}.`,
+      `Deleted ${deleteResult.affected || 0} old schedule entries for groups: ${groups.join(', ')}.`,
     );
 
     const mappedEntries = scheduleItems.map((item) => {
@@ -43,27 +44,24 @@ export class ScheduleService {
         teacherName: item.teacherName,
         lessonFormat: item.lessonFormat,
         location: item.location,
-      };
+      } as Partial<Schedule>;
     });
 
-    // Filter out entries where date is not a valid Date object
-    const entriesToInsert = mappedEntries
-      .filter((entry) => {
-        if (!(entry.date instanceof Date)) {
-          this.logger.error(
-            `Skipping entry for group ${entry.group} due to invalid date (not a Date object): ${entry.date}`,
-          );
-          return false;
-        }
-        return true;
-      })
-      .map((entry) => ({ ...entry, date: entry.date as Date })); // Ensure type is Date for insertMany
+    const entriesToInsert = mappedEntries.filter((entry) => {
+      if (!(entry.date instanceof Date) || isNaN(entry.date.getTime())) {
+        this.logger.error(
+          `Skipping entry for group ${entry.group} due to invalid date: ${entry.date}`,
+        );
+        return false;
+      }
+      return true;
+    });
 
     let createdSchedulesCount = 0;
     if (entriesToInsert.length > 0) {
-      const createdResult =
-        await this.scheduleModel.insertMany(entriesToInsert);
-      createdSchedulesCount = createdResult.length;
+      const createdSchedules =
+        await this.scheduleRepository.save(entriesToInsert);
+      createdSchedulesCount = createdSchedules.length;
       this.logger.log(
         `Inserted ${createdSchedulesCount} new schedule entries.`,
       );
@@ -75,38 +73,42 @@ export class ScheduleService {
 
     return {
       newCount: createdSchedulesCount,
-      deletedCount: deleteResult.deletedCount || 0,
+      deletedCount: deleteResult.affected || 0,
       groupsAffected: groups,
     };
   }
 
-  async getScheduleForGroup(groupName: string): Promise<ScheduleDocument[]> {
-    return this.scheduleModel
-      .find({ group: groupName })
-      .sort({ date: 1, time: 1 })
-      .exec();
+  async getScheduleForGroup(groupName: string): Promise<Schedule[]> {
+    return this.scheduleRepository.find({
+      where: { group: groupName },
+      order: { date: 'ASC', time: 'ASC' },
+    });
   }
 
   private formatDate(date: Date): string {
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
+      this.logger.error(`Invalid date passed to formatDate: ${date}`);
+      return 'Invalid Date';
+    }
     const day = String(date.getUTCDate()).padStart(2, '0');
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0'); // Месяцы в JS начинаются с 0
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
     const year = date.getUTCFullYear();
     return `${day}.${month}.${year}`;
   }
 
   async getNextDayScheduleFormatted(): Promise<string> {
     const today = new Date();
-    today.setUTCHours(0, 0, 0, 0); // Устанавливаем начало текущего дня в UTC
+    today.setUTCHours(0, 0, 0, 0);
 
     this.logger.debug(`Ищем расписание начиная с даты: ${today.toISOString()}`);
 
-    // 1. Найти самую раннюю дату, на которую есть расписание (сегодня или позже)
-    const nextScheduleDayEntry = await this.scheduleModel
-      .findOne({ date: { $gte: today } })
-      .sort({ date: 'asc' })
-      .select('date')
-      .lean()
-      .exec();
+    const nextScheduleDayEntry = await this.scheduleRepository.findOne({
+      where: {
+        date: MoreThanOrEqual(today),
+      },
+      order: { date: 'ASC' },
+      select: ['date'],
+    });
 
     if (!nextScheduleDayEntry) {
       this.logger.log('Расписание на ближайшие дни не найдено.');
@@ -118,12 +120,10 @@ export class ScheduleService {
       `Найдена ближайшая дата с расписанием: ${targetDate.toISOString()}`,
     );
 
-    // 2. Получить все записи расписания для этой даты
-    const schedulesForDate: Schedule[] = await this.scheduleModel
-      .find({ date: targetDate })
-      .sort({ group: 'asc', time: 'asc' })
-      .lean()
-      .exec();
+    const schedulesForDate: Schedule[] = await this.scheduleRepository.find({
+      where: { date: targetDate },
+      order: { group: 'ASC', time: 'ASC' },
+    });
 
     if (!schedulesForDate || schedulesForDate.length === 0) {
       this.logger.warn(
@@ -136,7 +136,6 @@ export class ScheduleService {
       `Найдено ${schedulesForDate.length} записей на ${this.formatDate(targetDate)}`,
     );
 
-    // 3. Форматировать расписание
     let response = `Расписание на ${this.formatDate(targetDate)}:\n\n`;
     const schedulesByGroup = schedulesForDate.reduce(
       (acc, schedule) => {
