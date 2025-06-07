@@ -1,13 +1,13 @@
 import { Command, Help, Start, Update } from 'nestjs-telegraf';
 import { Context } from 'telegraf';
-import { ScheduleService } from '../schedule/schedule.service';
+import { TimetableService } from '../timetable/timetable.service';
 import { Logger } from '@nestjs/common';
 
 @Update()
 export class TelegramUpdate {
   private readonly logger = new Logger(TelegramUpdate.name);
 
-  constructor(private readonly scheduleService: ScheduleService) {}
+  constructor(private readonly scheduleService: TimetableService) {}
 
   @Start()
   async start(ctx: Context) {

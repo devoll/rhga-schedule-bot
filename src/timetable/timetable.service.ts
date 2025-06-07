@@ -1,25 +1,25 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, MoreThanOrEqual } from 'typeorm';
-import { Schedule } from './schedule.entity';
-import { ScheduleItemDto } from './schedule-item.dto';
+import { TimetableItemDto } from './timetable-item.dto';
+import { Timetable } from './timetable.entity';
 
 @Injectable()
-export class ScheduleService {
-  private readonly logger = new Logger(ScheduleService.name);
+export class TimetableService {
+  private readonly logger = new Logger(TimetableService.name);
 
   constructor(
-    @InjectRepository(Schedule)
-    private scheduleRepository: Repository<Schedule>,
+    @InjectRepository(Timetable)
+    private scheduleRepository: Repository<Timetable>,
   ) {}
 
-  async overwriteSchedules(scheduleItems: ScheduleItemDto[]): Promise<{
+  async overwriteSchedules(scheduleItems: TimetableItemDto[]): Promise<{
     newCount: number;
     deletedCount: number;
     groupsAffected: string[];
   }> {
     if (!scheduleItems || scheduleItems.length === 0) {
-      this.logger.warn('No schedule items provided to overwrite.');
+      this.logger.warn('No timetable items provided to overwrite.');
       return { newCount: 0, deletedCount: 0, groupsAffected: [] };
     }
 
@@ -44,7 +44,7 @@ export class ScheduleService {
         teacherName: item.teacherName,
         lessonFormat: item.lessonFormat,
         location: item.location,
-      } as Partial<Schedule>;
+      } as Partial<Timetable>;
     });
 
     const entriesToInsert = mappedEntries.filter((entry) => {
@@ -67,7 +67,7 @@ export class ScheduleService {
       );
     } else if (scheduleItems.length > 0) {
       this.logger.warn(
-        'No valid schedule entries to insert after date parsing and filtering.',
+        'No valid timetable entries to insert after date parsing and filtering.',
       );
     }
 
@@ -78,7 +78,7 @@ export class ScheduleService {
     };
   }
 
-  async getScheduleForGroup(groupName: string): Promise<Schedule[]> {
+  async getScheduleForGroup(groupName: string): Promise<Timetable[]> {
     return this.scheduleRepository.find({
       where: { group: groupName },
       order: { date: 'ASC', time: 'ASC' },
@@ -120,7 +120,7 @@ export class ScheduleService {
       `Найдена ближайшая дата с расписанием: ${targetDate.toISOString()}`,
     );
 
-    const schedulesForDate: Schedule[] = await this.scheduleRepository.find({
+    const schedulesForDate: Timetable[] = await this.scheduleRepository.find({
       where: { date: targetDate },
       order: { group: 'ASC', time: 'ASC' },
     });
@@ -145,7 +145,7 @@ export class ScheduleService {
         acc[schedule.group].push(schedule);
         return acc;
       },
-      {} as Record<string, Schedule[]>,
+      {} as Record<string, Timetable[]>,
     );
 
     for (const groupName in schedulesByGroup) {

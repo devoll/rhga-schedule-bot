@@ -6,8 +6,8 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity('schedules') // 'schedules' будет именем таблицы в БД
-export class Schedule {
+@Entity('timetable') // 'schedules' будет именем таблицы в БД
+export class Timetable {
   @PrimaryGeneratedColumn()
   id: number;
 

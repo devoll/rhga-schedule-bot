@@ -2,12 +2,12 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TelegrafModule, TelegrafModuleOptions } from 'nestjs-telegraf';
 import { TelegramUpdate } from './telegram.update';
-import { ScheduleModule } from '../schedule/schedule.module';
+import { TimetableModule } from '../timetable/timetable.module';
 
 @Module({
   imports: [
     ConfigModule,
-    ScheduleModule,
+    TimetableModule,
     TelegrafModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService): TelegrafModuleOptions => {

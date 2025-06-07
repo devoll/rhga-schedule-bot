@@ -7,9 +7,10 @@ import { AppService } from './app.service';
 import { GoogleSheetsModule } from './google-sheets/google-sheets.module';
 import { GoogleSheetsController } from './google-sheets/google-sheets.controller';
 import configuration from './config/configuration';
-import { ScheduleModule } from './schedule/schedule.module';
+import { TimetableModule } from './timetable/timetable.module';
 import { SyncModule } from './sync/sync.module';
 import { TelegramModule } from './telegram/telegram.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -28,8 +29,9 @@ import { TelegramModule } from './telegram/telegram.module';
       }),
       inject: [ConfigService],
     }),
+    ScheduleModule.forRoot(),
     GoogleSheetsModule,
-    ScheduleModule,
+    TimetableModule,
     SyncModule,
     TelegramModule,
   ],

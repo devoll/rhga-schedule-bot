@@ -1,7 +1,7 @@
 import { IsString, IsNotEmpty, IsOptional, IsISO8601 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
-export class ScheduleItemDto {
+export class TimetableItemDto {
   @IsOptional()
   @IsString()
   course?: string;
