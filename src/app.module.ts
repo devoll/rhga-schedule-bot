@@ -21,7 +21,7 @@ import { TelegramModule } from './telegram/telegram.module';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: 'sqlite',
-        database: 'rgha-schedule-bot.sqlite',
+        database: configService.get<string>('sqlite.path'),
         entities: [join(__dirname, '**', '*.entity{.ts,.js}')],
         synchronize: true,
         // autoLoadEntities: true,
