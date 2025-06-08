@@ -20,7 +20,7 @@ RUN npm run build
 # Этап продакшена (production)
 FROM node:20-alpine AS production
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 # Устанавливаем рабочую директорию
 WORKDIR /usr/src/app
