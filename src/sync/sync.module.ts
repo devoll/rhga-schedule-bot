@@ -19,6 +19,6 @@ export class SyncModule implements OnModuleInit {
   constructor(private readonly syncService: SyncService) {
   }
   async onModuleInit() {
-    await this.syncService.syncSheetToDb();
+    await this.syncService.cronSync();
   }
 }
