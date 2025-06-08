@@ -11,16 +11,12 @@ export class GoogleSheetsController {
     private readonly googleSheetsService: GoogleSheetsService,
     private readonly configService: ConfigService,
   ) {
-    this.spreadsheetId = this.configService.get<string>(
-      'googleSheets.spreadsheetId',
+    this.spreadsheetId = this.configService.getOrThrow<string>(
+      'GOOGLE_SHEETS_SPREADSHEET_ID',
     );
     this.defaultSheet = this.configService.get<string>(
-      'googleSheets.defaultSheet',
+      'GOOGLE_DEFAULT_SHEET_NAME',
     );
-
-    if (!this.spreadsheetId) {
-      throw new Error('GOOGLE_SHEETS_SPREADSHEET_ID не задан в конфигурации');
-    }
   }
 
   @Get('sheet')

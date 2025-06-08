@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import fetch from 'node-fetch';
 
 export interface SheetData {
@@ -9,6 +9,7 @@ export interface SheetData {
 
 @Injectable()
 export class GoogleSheetsService {
+  private readonly logger = new Logger(GoogleSheetsService.name);
   private readonly baseUrl = 'https://docs.google.com/spreadsheets/d';
 
   private getColumnIndex(columnId: string): number {
@@ -99,7 +100,7 @@ export class GoogleSheetsService {
         const rowData: Record<string, any> = {};
         if (row && row.c) {
           // Убедимся, что есть массив ячеек 'c'
-          cols.forEach((colDef: any, index: number) => {
+          cols.forEach((colDef: any) => {
             if (
               colDef &&
               colDef.label &&
@@ -157,12 +158,12 @@ export class GoogleSheetsService {
                             valueToStore = parsedDate.toISOString(); // Преобразуем в ISO строку (напр. '2024-11-07T00:00:00.000Z')
                           } else {
                             // Дата была некорректной (например, 30.02.24), оставляем исходную строку
-                            console.warn(
+                            this.logger.warn(
                               `Invalid date components for string "${dateString}" (header "${headerName}"). Keeping original.`,
                             );
                           }
                         } catch (e) {
-                          console.warn(
+                          this.logger.error(
                             `Failed to parse date string "${dateString}" for header "${headerName}": ${e.message}. Keeping original.`,
                           );
                           // Ошибка при создании Date, оставляем исходную строку
@@ -214,7 +215,10 @@ export class GoogleSheetsService {
         const sheetData = await this.getSheetData(spreadsheetId, sheetName);
         results.push(sheetData);
       } catch (error) {
-        console.error(`Ошибка при загрузке листа ${sheetName}:`, error.message); // Оставляем логирование, но не прерываем весь процесс
+        this.logger.error(
+          `Ошибка при загрузке листа ${sheetName}:`,
+          error.message,
+        ); // Оставляем логирование, но не прерываем весь процесс
       }
     }
 

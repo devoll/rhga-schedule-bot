@@ -16,17 +16,12 @@ export class SyncService {
     private readonly scheduleService: TimetableService,
     private readonly configService: ConfigService,
   ) {
-    this.spreadsheetId = this.configService.get<string>(
-      'googleSheets.spreadsheetId',
+    this.spreadsheetId = this.configService.getOrThrow<string>(
+      'GOOGLE_SHEETS_SPREADSHEET_ID',
     );
     this.defaultSheetName = this.configService.get<string>(
-      'googleSheets.defaultSheet',
+      'GOOGLE_DEFAULT_SHEET_NAME',
     );
-
-    if (!this.spreadsheetId) {
-      const errorMessage = 'GOOGLE_SPREADSHEET_ID is not configured!';
-      this.logger.error(errorMessage);
-    }
   }
 
   @Cron('0 0 */1 * * *')
