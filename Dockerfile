@@ -4,7 +4,10 @@ FROM node:20-alpine AS builder
 # Устанавливаем рабочую директорию
 WORKDIR /usr/src/app
 
-# Копируем package.json и package-lock.json (или yarn.lock)
+# Устанавливаем необходимые зависимости для сборки нативных модулей
+RUN apk add --no-cache python3 make g++
+
+# Копируем package.json и package-lock.json
 COPY package*.json ./
 
 # Устанавливаем все зависимости, включая devDependencies
@@ -25,11 +28,14 @@ ENV NODE_ENV=production
 # Устанавливаем рабочую директорию
 WORKDIR /usr/src/app
 
-# Копируем package.json и package-lock.json (или yarn.lock)
+# Устанавливаем минимально необходимые зависимости для работы sqlite3
+RUN apk add --no-cache python3
+
+# Копируем package.json и package-lock.json
 COPY package*.json ./
 
 # Устанавливаем только production-зависимости
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --build-from-source=sqlite3
 
 # Копируем скомпилированное приложение из этапа сборки
 COPY --from=builder /usr/src/app/dist ./dist
