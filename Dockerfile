@@ -35,7 +35,7 @@ RUN apk add --no-cache python3
 COPY package*.json ./
 
 # Устанавливаем только production-зависимости
-RUN npm ci --omit=dev --build-from-source=sqlite3
+RUN npm ci --omit=dev
 
 # Копируем скомпилированное приложение из этапа сборки
 COPY --from=builder /usr/src/app/dist ./dist
