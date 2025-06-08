@@ -21,13 +21,18 @@ export class TelegramUpdate {
 
   @Command('next')
   async next(ctx: Context) {
-    this.logger.log(`Получена команда /next от пользователя ${ctx.from.username || ctx.from.id}`);
+    this.logger.log(
+      `Получена команда /next от пользователя ${ctx.from.username || ctx.from.id}`,
+    );
     try {
-      const scheduleMessage = await this.scheduleService.getNextDayScheduleFormatted();
+      const scheduleMessage =
+        await this.scheduleService.getNextDayScheduleFormatted();
       await ctx.reply(scheduleMessage, { parse_mode: 'HTML' }); // Используем HTML для поддержки переносов строк \n
     } catch (error) {
       this.logger.error('Ошибка при обработке команды /next:', error);
-      await ctx.reply('Произошла ошибка при получении расписания. Попробуйте позже.');
+      await ctx.reply(
+        'Произошла ошибка при получении расписания. Попробуйте позже.',
+      );
     }
   }
 }

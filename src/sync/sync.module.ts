@@ -15,9 +15,7 @@ import { SyncService } from './sync.service'; // Путь изменится п�
   providers: [SyncService],
 })
 export class SyncModule implements OnModuleInit {
-
-  constructor(private readonly syncService: SyncService) {
-  }
+  constructor(private readonly syncService: SyncService) {}
   async onModuleInit() {
     await this.syncService.cronSync();
   }
