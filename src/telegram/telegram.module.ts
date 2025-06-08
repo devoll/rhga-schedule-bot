@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TelegrafModule, TelegrafModuleOptions } from 'nestjs-telegraf';
 import { TelegramUpdate } from './telegram.update';
 import { TimetableModule } from '../timetable/timetable.module';
+import { TelegramController } from './telegram.controller';
 
 @Module({
   imports: [
@@ -14,9 +15,6 @@ import { TimetableModule } from '../timetable/timetable.module';
         const botToken = configService.get<string>('telegram.botToken');
         const nodeEnv = configService.get<string>('nodeEnv');
         const domain = configService.get<string>('telegram.domain');
-        const webhookPathFromConfig = configService.get<string>(
-          'telegram.webhookPath',
-        );
 
         const telegrafOptions: TelegrafModuleOptions = {
           token: botToken,
@@ -25,10 +23,7 @@ import { TimetableModule } from '../timetable/timetable.module';
         if (nodeEnv === 'production' && domain) {
           // Production: use webhook
           // Используем часть токена после последнего ':' как уникальный идентификатор, если webhookPathFromConfig не задан
-          const defaultPathSegment = botToken.substring(
-            botToken.lastIndexOf(':') + 1,
-          );
-          const hookPath = webhookPathFromConfig || `/telegraf/${defaultPathSegment}`;
+          const hookPath = '/telegram/webhook';
 
           console.log(
             `Production mode: Setting up Telegraf webhook for domain ${domain} and path ${hookPath}`,
@@ -52,5 +47,6 @@ import { TimetableModule } from '../timetable/timetable.module';
     }),
   ],
   providers: [TelegramUpdate],
+  controllers: [TelegramController],
 })
 export class TelegramModule {}
