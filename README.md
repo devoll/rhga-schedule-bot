@@ -1,73 +1,54 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Бот отслеживания расписания РГХА
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Телеграм-бот для отслеживания изменений в расписании занятий РГХА из Google Spreadsheet и уведомления подписчиков.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Основные возможности
 
-## Description
+*   Периодическая проверка расписания в Google Spreadsheet (раз в час).
+*   Сравнение с локальной базой данных для выявления изменений.
+*   Отправка уведомлений об изменениях подписанным пользователям.
+*   Сохранение актуального расписания в локальную базу данных.
+*   Просмотр расписания через команды бота (сегодня, завтра, неделя, месяц).
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Технологический стек
 
-## Installation
+*   Node.js
+*   NestJS
+*   TypeORM
+*   SQLite
+*   Telegraf (для интеграции с Telegram API)
 
-```bash
-$ npm install
-```
+## Запуск и настройка
 
-## Running the app
+1.  **Клонировать репозиторий:**
+    ```bash
+    git clone <URL репозитория>
+    cd rgha-schedule-bot
+    ```
+2.  **Установить зависимости:**
+    ```bash
+    npm install
+    ```
+3.  **Настроить переменные окружения:**
+    Создайте файл `.env` на основе `.env.example` и укажите необходимые значения:
+    *   `TELEGRAM_BOT_TOKEN`: Токен вашего Telegram-бота.
+    *   `GOOGLE_SPREADSHEET_ID`: ID Google таблицы с расписанием.
+    *   `DATABASE_PATH` (опционально): Путь к файлу базы данных SQLite (по умолчанию `rgha-schedule-bot.sqlite`).
+    *   `NODE_ENV`: Режим запуска (`development` или `production`).
+    *   `TELEGRAM_DOMAIN` (для production webhook): Домен, на котором будет доступен бот.
+    *   `TELEGRAM_WEBHOOK_PATH` (опционально для production webhook): Путь для вебхука.
 
-```bash
-# development
-$ npm run start
+4.  **Запустить приложение:**
+    *   В режиме разработки:
+        ```bash
+        npm run start:dev
+        ```
+    *   Для production сборки:
+        ```bash
+        npm run build
+        npm run start:prod
+        ```
 
-# watch mode
-$ npm run start:dev
+## Документация
 
-# production mode
-$ npm run start:prod
-```
-
-## Test
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
+Более подробное описание проекта и его компонентов можно найти в папке [`docs`](./docs/README.md).
