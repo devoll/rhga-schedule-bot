@@ -27,10 +27,14 @@ export class SyncService {
   @Cron('0 0 */1 * * *')
   async cronSync() {
     await this.syncSheetToDb().catch((error) => {
-      this.logger.error(
-        `Error during sync for sheet: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error({
+        message: `Error during sync for sheet`,
+        error: {
+          message: error.message,
+          stack: error.stack,
+          raw: JSON.stringify(error),
+        },
+      });
     });
   }
 
