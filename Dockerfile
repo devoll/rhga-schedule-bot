@@ -24,6 +24,7 @@ RUN npm run build
 FROM node:20-alpine AS production
 
 ENV NODE_ENV=production
+ENV TZ=Europe/Moscow
 
 # Устанавливаем рабочую директорию
 WORKDIR /usr/src/app
