@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import fetch from 'node-fetch';
+import { HttpService } from "@nestjs/axios";
+import { firstValueFrom } from 'rxjs';
 
 export interface SheetData {
   title: string;
@@ -11,6 +12,8 @@ export interface SheetData {
 export class GoogleSheetsService {
   private readonly logger = new Logger(GoogleSheetsService.name);
   private readonly baseUrl = 'https://docs.google.com/spreadsheets/d';
+
+  constructor(private readonly httpService: HttpService) {}
 
   private getColumnIndex(columnId: string): number {
     let index = 0;
@@ -36,15 +39,10 @@ export class GoogleSheetsService {
       }/${spreadsheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(
         sheetName,
       )}`;
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        throw new Error(
-          `Ошибка при загрузке данных: ${response.status} ${response.statusText}`,
-        );
-      }
-
-      const text = await response.text();
+      const response = await firstValueFrom(
+        this.httpService.get(url, { responseType: 'text' }),
+      );
+      const text = response.data;
       // Удаляем префикс и суффикс, которые добавляет Google, или если это чистый JSON, оставляем как есть.
       // Эта регулярка находит первый '{' и последний '}' и берет все между ними, включая их.
       // Это должно работать как для `google.visualization.Query.setResponse({json})` так и для чистого `{json}`.
