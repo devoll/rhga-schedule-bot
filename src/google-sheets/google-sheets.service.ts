@@ -39,7 +39,7 @@ export class GoogleSheetsService {
       sheetName,
     )}`;
     const response = await firstValueFrom(
-      this.httpService.get(url, { responseType: 'text' }),
+      this.httpService.get(url, { responseType: 'text', timeout: 10_000 }),
     );
     const text = response.data;
     // Удаляем префикс и суффикс, которые добавляет Google, или если это чистый JSON, оставляем как есть.
