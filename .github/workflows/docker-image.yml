@@ -90,3 +90,16 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ steps.get-version.outputs.version }}
             ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:latest
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [ build-and-push ]
+    container:
+      image: dockhost/cli:latest
+    steps:
+      - name: Login to Dockhost
+        run: |
+          dockhost config login -u "${{ secrets.DOCKHOST_LOGIN }}" -p "${{ secrets.DOCKHOST_PASSWORD }}"
+
+      - name: Update Container Image
+        run: |
+          dockhost container update-image --name "${{ secrets.DOCKHOST_CONTAINER }}" --image ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ steps.get-version.outputs.version }} --project "${{ secrets.DOCKHOST_PROJECT }}"
