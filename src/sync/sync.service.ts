@@ -26,16 +26,44 @@ export class SyncService {
 
   @Cron('0 0 */1 * * *')
   async cronSync() {
-    await this.syncSheetToDb().catch((error) => {
+    try {
+      await this.syncSheetToDb();
+      this.logger.log('Синхронизация успешно завершена');
+    } catch (error) {
+      // Более детальная обработка ошибок
+      let errorMessage = error.message || 'Неизвестная ошибка';
+      let errorDetails: any = {
+        message: errorMessage,
+        stack: error.stack,
+      };
+
+      // Если ошибка содержит вложенные ошибки (например, из axios)
+      if (error.response) {
+        errorDetails.response = {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+        };
+      }
+
+      if (error.request) {
+        errorDetails.request = {
+          method: error.request.method,
+          path: error.request.path,
+          host: error.request.host,
+        };
+      }
+
+      if (error.code) {
+        errorDetails.code = error.code;
+      }
+
       this.logger.error({
-        message: `Error during sync for sheet`,
-        error: {
-          message: error.message,
-          stack: error.stack,
-          raw: JSON.stringify(error),
-        },
+        message: `Ошибка при синхронизации с Google Sheets`,
+        error: errorDetails,
+        raw: JSON.stringify(error),
       });
-    });
+    }
   }
 
   async syncSheetToDb(sheetNameParam?: string) {
