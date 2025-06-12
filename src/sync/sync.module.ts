@@ -5,13 +5,26 @@ import { TimetableModule } from '../timetable/timetable.module'; // Путь и�
 import { SyncController } from './sync.controller';
 import { SyncService } from './sync.service';
 import { HttpModule } from '@nestjs/axios'; // Путь изменится при переносе
+import { Agent as HttpsAgent } from 'https';
 
 @Module({
   imports: [
     ConfigModule, // Убедитесь, что ConfigModule глобальный или экспортируется из AppModule
     GoogleSheetsModule, // Предоставляет GoogleSheetsService
     TimetableModule, // Предоставляет TimetableService
-    HttpModule,
+    HttpModule.registerAsync({
+      useFactory: () => {
+        const agent = new HttpsAgent({
+          family: 4,
+          timeout: 30_000,
+        });
+        return {
+          timeout: 30_000,
+          httpsAgent: agent,
+          headers: { 'User-Agent': 'NestJS/GoogleDocsFetcher' },
+        };
+      },
+    }),
   ],
   controllers: [SyncController],
   providers: [SyncService],
