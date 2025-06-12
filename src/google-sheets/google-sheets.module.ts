@@ -1,13 +1,22 @@
 import { Module } from '@nestjs/common';
 import { GoogleSheetsService } from './google-sheets.service';
 import { HttpModule } from '@nestjs/axios';
+import { Agent as HttpsAgent } from 'https';
 
 @Module({
   imports: [
-    HttpModule.register({
-      timeout: 30000, // 30 секунд таймаут
-      maxRedirects: 5, // Максимальное количество редиректов
-      validateStatus: (status) => status < 500, // Принимаем любые статусы кроме 5xx
+    HttpModule.registerAsync({
+      useFactory: () => {
+        const agent = new HttpsAgent({
+          family: 4,
+          timeout: 30_000,
+        });
+        return {
+          timeout: 30_000,
+          httpsAgent: agent,
+          headers: { 'User-Agent': 'NestJS/GoogleDocsFetcher' },
+        };
+      },
     }),
   ],
   providers: [GoogleSheetsService],
